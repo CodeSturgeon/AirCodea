@@ -37,7 +37,6 @@ class CodeaProject(object):
 
     def upload_file(self, filename):
         # FIXME check for file exsistance
-        # FIXME strip .lua if there
         text = open(filename + '.lua').read()
         req.post(self.base + '/__update',
             data=json.dumps({
@@ -48,7 +47,6 @@ class CodeaProject(object):
         return md5(text).hexdigest()
 
     def download_file(self, filename):
-        # FIXME strip .lua if there
         resp = req.get('%s/%s' % (self.base, filename))
         xp = '//div[@id="editor"]'
         text = html.fromstring(resp.content).xpath(xp)[0].text
@@ -68,13 +66,26 @@ port = cfg.get('connection', 'port')
 project = cfg.get('connection', 'project')
 cp = CodeaProject(ip, port, project)
 
+filename = args['<name>']
+if filename is not None and filename.endswith('.lua'):
+    filename = filename[:-4]
+
+
+def save_hash(filename, code_hash):
+    if not cfg.has_section(filename):
+        cfg.add_section(filename)
+    cfg.set(filename, 'hash', code_hash)
 
 if args['push']:
-    cp.upload_file(args['<name>'])
+    code_hash = cp.upload_file(filename)
+    save_hash(filename, code_hash)
 elif args['pull']:
-    cp.download_file(args['<name>'])
+    code_hash = cp.download_file(filename)
+    save_hash(filename, code_hash)
 else:
     print 'coming soon'
 
 if args['--restart']:
     cp.restart()
+
+cfg.write(open('.air_codea.cfg', 'wb'))
