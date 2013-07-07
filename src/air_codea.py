@@ -20,10 +20,10 @@ class CodeaProject(object):
 
     def upload_file(self, filename):
         # FIXME check for file exsistance
-        text = open(filename+'.lua').read()
-        resp = req.post(self.base+'/__update',
+        text = open(filename + '.lua').read()
+        req.post(self.base + '/__update',
             data=json.dumps({
-                'file': filename, 
+                'file': filename,
                 'contents': text
             })
         )
@@ -32,10 +32,10 @@ class CodeaProject(object):
         resp = req.get('%s/%s' % (self.base, filename))
         xp = '//div[@id="editor"]'
         text = html.fromstring(resp.content).xpath(xp)[0].text
-        open(filename+'.lua', 'w').write(text)
+        open(filename + '.lua', 'w').write(text)
 
     def restart(self):
-        resp = req.get(self.base+'/__restart')
+        req.get(self.base + '/__restart')
 
 cfg = ConfigParser()
 cfg.read('.air_codea.cfg')
