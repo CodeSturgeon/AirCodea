@@ -14,18 +14,28 @@ class CodeaProject(object):
     def _check_files(self):
         # FIXME error checking
         resp = req.get(self.base)
-        xpath = '//div[@class="project-title"]'
-        files = [e.text for e in html.fromstring(resp.content).xpath(xpath)]
+        xp = '//div[@class="project-title"]'
+        files = [e.text for e in html.fromstring(resp.content).xpath(xp)]
         self.files = files
 
     def upload_file(self, filename):
-        text = open(filename).read()
+        # FIXME check for file exsistance
+        text = open(filename+'.lua').read()
         resp = req.post(self.base+'/__update',
             data=json.dumps({
-                'file':'Main', 
-                'contents':text
+                'file': filename, 
+                'contents': text
             })
         )
+
+    def download_file(self, filename):
+        resp = req.get('%s/%s' % (self.base, filename))
+        xp = '//div[@id="editor"]'
+        text = html.fromstring(resp.content).xpath(xp)[0].text
+        open(filename+'.lua', 'w').write(text)
+
+    def restart(self):
+        resp = req.get(self.base+'/__restart')
 
 cfg = ConfigParser()
 cfg.read('.air_codea.cfg')
@@ -35,4 +45,6 @@ port = cfg.get('connection', 'port')
 project = cfg.get('connection', 'project')
 
 cp = CodeaProject(ip, port, project)
-cp.upload_file('Main.lua')
+cp.upload_file('Main')
+cp.download_file('Joe')
+cp.restart()
