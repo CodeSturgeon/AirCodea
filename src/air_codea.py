@@ -17,9 +17,10 @@ Options:
 import requests as req
 from lxml import html
 import json
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoSectionError
 from hashlib import md5
 from docopt import docopt
+from glob import glob
 
 
 class CodeaProject(object):
@@ -29,14 +30,12 @@ class CodeaProject(object):
         self._check_files()
 
     def _check_files(self):
-        # FIXME error checking
         resp = req.get(self.base)
         xp = '//div[@class="project-title"]'
         files = [e.text for e in html.fromstring(resp.content).xpath(xp)]
         self.files = files
 
     def upload_file(self, filename):
-        # FIXME check for file exsistance
         text = open(filename + '.lua').read()
         req.post(self.base + '/__update',
             data=json.dumps({
@@ -46,12 +45,16 @@ class CodeaProject(object):
         )
         return md5(text).hexdigest()
 
-    def download_file(self, filename):
+    def get_file(self, filename):
         resp = req.get('%s/%s' % (self.base, filename))
         xp = '//div[@id="editor"]'
         text = html.fromstring(resp.content).xpath(xp)[0].text
+        return md5(text).hexdigest(), text
+
+    def download_file(self, filename):
+        code_hash, text = self.get_file(filename)
         open(filename + '.lua', 'w').write(text)
-        return md5(text).hexdigest()
+        return code_hash
 
     def restart(self):
         req.get(self.base + '/__restart')
@@ -76,14 +79,57 @@ def save_hash(filename, code_hash):
         cfg.add_section(filename)
     cfg.set(filename, 'hash', code_hash)
 
+
+# Push
 if args['push']:
-    code_hash = cp.upload_file(filename)
-    save_hash(filename, code_hash)
+    if filename in cp.files:
+        code_hash = cp.upload_file(filename)
+        save_hash(filename, code_hash)
+    else:
+        print 'That file is not in the project!'
+
+# Pull
 elif args['pull']:
     code_hash = cp.download_file(filename)
     save_hash(filename, code_hash)
+
+# Sync
 else:
-    print 'coming soon'
+    local_files = [f[:-4] for f in glob('*.lua')]
+    for fn in cp.files:
+        # Remote file is not Local
+        if fn not in local_files:
+            print 'Downloading', fn
+            save_hash(fn, cp.download_file(fn))
+            continue
+
+        # We don't have a hash on file
+        try:
+            last_hash = cfg.get(fn, 'hash')
+        except NoSectionError:
+            print 'Unknown state for', fn
+            continue
+
+        # Get local details
+        local_text = open(fn + '.lua').read()
+        local_hash = md5(local_text).hexdigest()
+
+        # No local changes, might as well download
+        if local_hash == last_hash:
+            print 'Downloading (unchanged locally)', fn
+            save_hash(fn, cp.download_file(fn))
+            continue
+
+        # We have to download the remote now
+        remote_hash, remote_text = cp.get_file(fn)
+
+        # If the remote is unchanged then upload
+        if remote_hash == last_hash:
+            print 'Uploading', fn
+            save_hash(fn, cp.upload_file(fn))
+            continue
+
+        print 'Local and remote changed for', fn
 
 if args['--restart']:
     cp.restart()
