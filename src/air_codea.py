@@ -132,6 +132,7 @@ else:
         print 'Local and remote changed for', fn
 
 if args['--restart']:
+    print 'Restarting'
     cp.restart()
 
 cfg.write(open('.air_codea.cfg', 'wb'))
