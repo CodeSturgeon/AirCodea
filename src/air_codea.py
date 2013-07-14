@@ -1,28 +1,7 @@
-#!/usr/bin/env python
-
-'''Air Codea
-Shell interface for the 'Air Code' feature of Codea
-
-Usage:
-  codea [-r]
-  codea [-r] push <name>
-  codea [-r] pull <name>
-  codea restart
-
-Options:
-  -h --help     Show this help
-  -r --restart  Restart the project
-
-'''
-
 import requests as req
 from lxml import html
 import json
-from ConfigParser import ConfigParser, NoSectionError
 from hashlib import md5
-from docopt import docopt
-from glob import glob
-from time import sleep
 
 
 class CodeaProject(object):
@@ -51,7 +30,7 @@ class CodeaProject(object):
         resp = req.get('%s/%s' % (self.base, filename))
         xp = '//div[@id="editor"]'
         text = html.fromstring(resp.content).xpath(xp)[0].text
-        if text is None: # Blank file
+        if text is None:  # Blank file
             text = ''
         return md5(text).hexdigest(), text
 
@@ -62,89 +41,3 @@ class CodeaProject(object):
 
     def restart(self):
         req.get(self.base + '/__restart')
-
-
-args = docopt(__doc__)
-cfg = ConfigParser()
-cfg.read('.air_codea.cfg')
-# I can do **dict(cfg.items('connection')) or similar... but what errors?
-ip = cfg.get('connection', 'ip')
-port = cfg.get('connection', 'port')
-project = cfg.get('connection', 'project')
-cp = CodeaProject(ip, port, project)
-
-filename = args['<name>']
-if filename is not None and filename.endswith('.lua'):
-    filename = filename[:-4]
-
-
-def save_hash(filename, code_hash):
-    if not cfg.has_section(filename):
-        cfg.add_section(filename)
-    cfg.set(filename, 'hash', code_hash)
-
-
-# Push
-if args['push']:
-    if filename in cp.files:
-        code_hash = cp.upload_file(filename)
-        save_hash(filename, code_hash)
-    else:
-        print 'That file is not in the project!'
-
-# Pull
-elif args['pull']:
-    code_hash = cp.download_file(filename)
-    save_hash(filename, code_hash)
-
-elif args['restart']:
-    cp.restart()
-
-# Sync
-else:
-    local_files = [f[:-4] for f in glob('*.lua')]
-    for fn in cp.files:
-        print fn, '-',
-        # Remote file is not Local
-        if fn not in local_files:
-            print 'Creating locally'
-            save_hash(fn, cp.download_file(fn))
-            continue
-
-        # We don't have a hash on file
-        try:
-            last_hash = cfg.get(fn, 'hash')
-        except NoSectionError:
-            print 'Unknown state'
-            continue
-
-        # Get local details
-        local_text = open(fn + '.lua').read()
-        local_hash = md5(local_text).hexdigest()
-
-        # We have to download the remote now
-        remote_hash, remote_text = cp.get_file(fn)
-
-        # No local changes, might as well download
-        if local_hash == last_hash:
-            if remote_hash == last_hash:
-                print 'No changes'
-                continue
-            print 'Downloading'
-            save_hash(fn, remote_hash)
-            continue
-
-        # If the remote is unchanged then upload
-        if remote_hash == last_hash:
-            print 'Uploading'
-            save_hash(fn, cp.upload_file(fn))
-            continue
-
-        print 'Local and remote changed'
-
-if args['--restart']:
-    print 'Restarting'
-    sleep(1) # Might help prevent Codea eating all tabs bug?
-    cp.restart()
-
-cfg.write(open('.air_codea.cfg', 'wb'))
