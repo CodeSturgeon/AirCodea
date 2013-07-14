@@ -22,6 +22,7 @@ from ConfigParser import ConfigParser, NoSectionError
 from hashlib import md5
 from docopt import docopt
 from glob import glob
+from time import sleep
 
 
 class CodeaProject(object):
@@ -139,6 +140,7 @@ else:
 
 if args['--restart']:
     print 'Restarting'
+    sleep(1) # Might help prevent Codea eating all tabs bug?
     cp.restart()
 
 cfg.write(open('.air_codea.cfg', 'wb'))
