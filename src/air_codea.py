@@ -31,9 +31,10 @@ class CodeaProject(object):
 
     def _check_files(self):
         resp = req.get(self.base)
-        xp = '//div[@class="project-title"]'
+        xp = '//ul[@class="tabs"]/a[@href!="/"]/li'
         files = [e.text for e in html.fromstring(resp.content).xpath(xp)]
         self.files = files
+        print files
 
     def upload_file(self, filename):
         text = open(filename + '.lua').read()
