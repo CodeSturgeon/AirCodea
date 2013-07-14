@@ -34,7 +34,6 @@ class CodeaProject(object):
         xp = '//ul[@class="tabs"]/a[@href!="/"]/li'
         files = [e.text for e in html.fromstring(resp.content).xpath(xp)]
         self.files = files
-        print files
 
     def upload_file(self, filename):
         text = open(filename + '.lua').read()
