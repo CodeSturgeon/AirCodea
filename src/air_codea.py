@@ -50,6 +50,8 @@ class CodeaProject(object):
         resp = req.get('%s/%s' % (self.base, filename))
         xp = '//div[@id="editor"]'
         text = html.fromstring(resp.content).xpath(xp)[0].text
+        if text is None: # Blank file
+            text = ''
         return md5(text).hexdigest(), text
 
     def download_file(self, filename):
