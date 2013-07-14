@@ -104,9 +104,10 @@ elif args['restart']:
 else:
     local_files = [f[:-4] for f in glob('*.lua')]
     for fn in cp.files:
+        print fn, '-',
         # Remote file is not Local
         if fn not in local_files:
-            print 'Creating', fn
+            print 'Creating locally'
             save_hash(fn, cp.download_file(fn))
             continue
 
@@ -114,7 +115,7 @@ else:
         try:
             last_hash = cfg.get(fn, 'hash')
         except NoSectionError:
-            print 'Unknown state for', fn
+            print 'Unknown state'
             continue
 
         # Get local details
@@ -127,19 +128,19 @@ else:
         # No local changes, might as well download
         if local_hash == last_hash:
             if remote_hash == last_hash:
-                print 'No changes', fn
+                print 'No changes'
                 continue
-            print 'Downloading', fn
+            print 'Downloading'
             save_hash(fn, remote_hash)
             continue
 
         # If the remote is unchanged then upload
         if remote_hash == last_hash:
-            print 'Uploading', fn
+            print 'Uploading'
             save_hash(fn, cp.upload_file(fn))
             continue
 
-        print 'Local and remote changed for', fn
+        print 'Local and remote changed'
 
 if args['--restart']:
     print 'Restarting'
