@@ -7,6 +7,7 @@ Usage:
   codea [-r]
   codea [-r] push <name>
   codea [-r] pull <name>
+  codea restart
 
 Options:
   -h --help     Show this help
@@ -92,6 +93,9 @@ if args['push']:
 elif args['pull']:
     code_hash = cp.download_file(filename)
     save_hash(filename, code_hash)
+
+elif args['restart']:
+    cp.restart()
 
 # Sync
 else:
