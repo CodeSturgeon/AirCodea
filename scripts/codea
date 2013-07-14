@@ -8,6 +8,7 @@ Usage:
   codea [-r] push <name>
   codea [-r] pull <name>
   codea restart
+  codea files
 
 Options:
   -h --help     Show this help
@@ -56,6 +57,10 @@ elif args['pull']:
 
 elif args['restart']:
     cp.restart()
+
+elif args['files']:
+    for f in cp.files:
+        print f
 
 # Sync
 else:
