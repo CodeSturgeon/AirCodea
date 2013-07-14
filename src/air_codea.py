@@ -106,7 +106,7 @@ else:
     for fn in cp.files:
         # Remote file is not Local
         if fn not in local_files:
-            print 'Downloading', fn
+            print 'Creating', fn
             save_hash(fn, cp.download_file(fn))
             continue
 
@@ -121,14 +121,17 @@ else:
         local_text = open(fn + '.lua').read()
         local_hash = md5(local_text).hexdigest()
 
-        # No local changes, might as well download
-        if local_hash == last_hash:
-            print 'Downloading (unchanged locally)', fn
-            save_hash(fn, cp.download_file(fn))
-            continue
-
         # We have to download the remote now
         remote_hash, remote_text = cp.get_file(fn)
+
+        # No local changes, might as well download
+        if local_hash == last_hash:
+            if remote_hash == last_hash:
+                print 'No changes', fn
+                continue
+            print 'Downloading', fn
+            save_hash(fn, remote_hash)
+            continue
 
         # If the remote is unchanged then upload
         if remote_hash == last_hash:
