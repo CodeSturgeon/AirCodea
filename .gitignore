@@ -1,3 +1,4 @@
 .air_codea.cfg
+air_codea.log
 *.pyc
 *.lua

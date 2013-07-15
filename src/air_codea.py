@@ -2,6 +2,9 @@ import requests as req
 from lxml import html
 import json
 from hashlib import md5
+import logging
+
+log = logging.getLogger('base')
 
 
 class CodeaProject(object):
@@ -11,26 +14,37 @@ class CodeaProject(object):
         self._check_files()
 
     def _check_files(self):
+        log.info('Checking files @ %s' % self.base)
         resp = req.get(self.base)
+        if resp.status_code!= 200:
+            log.debug(resp.content)
         xp = '//ul[@class="tabs"]/a[@href!="/"]/li'
         files = [e.text for e in html.fromstring(resp.content).xpath(xp)]
         self.files = files
+        log.info('Found %s' % ', '.join(files))
 
     def upload_file(self, filename):
+        log.info('Uploading %s' % filename)
         text = open(filename + '.lua').read()
-        req.post(self.base + '/__update',
+        resp = req.post(self.base + '/__update',
             data=json.dumps({
                 'file': filename,
                 'contents': text
             })
         )
+        if resp.status_code!= 200:
+            log.debug(resp.content)
         return md5(text).hexdigest()
 
     def get_file(self, filename):
+        log.info('Getting %s' % filename)
         resp = req.get('%s/%s' % (self.base, filename))
+        if resp.status_code!= 200:
+            log.debug(resp.content)
         xp = '//div[@id="editor"]'
         text = html.fromstring(resp.content).xpath(xp)[0].text
         if text is None:  # Blank file
+            log.info('Got blank file')
             text = ''
         return md5(text).hexdigest(), text
 
@@ -40,4 +54,7 @@ class CodeaProject(object):
         return code_hash
 
     def restart(self):
-        req.get(self.base + '/__restart')
+        log.info('Restarting')
+        resp = req.get(self.base + '/__restart')
+        if resp.status_code!= 200:
+            log.debug(resp.content)

@@ -21,14 +21,19 @@ from docopt import docopt
 from glob import glob
 from hashlib import md5
 from air_codea import CodeaProject
+import logging
 
 args = docopt(__doc__)
 cfg = ConfigParser()
 cfg.read('.air_codea.cfg')
+
 # I can do **dict(cfg.items('connection')) or similar... but what errors?
 ip = cfg.get('connection', 'ip')
 port = cfg.get('connection', 'port')
 project = cfg.get('connection', 'project')
+
+logging.basicConfig(filename='air_codea.log', level=logging.DEBUG)
+
 cp = CodeaProject(ip, port, project)
 
 filename = args['<name>']
