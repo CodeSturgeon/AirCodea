@@ -10,7 +10,7 @@ Air Codea is a command line sync tool for use with the Air Code feature of Codea
 Pull file from Codea overwriting content
 
 ### Push
-Push file to Codea overwirting content
+Push file to Codea overwriting content
 (Note you cannot make new files like this)
 
 ### Sync (Default)
@@ -19,7 +19,8 @@ Try to judge which way the files should go. If in doubt do nothing.
 First list the files that Codea knows of, then:
 - If the file is not downloaded, pull the file
 - Get the last known hash of the file, if we don't have one, skip the file
-- If the file is not changed localy, pull the file
+- If the file is not changed locally or remotely, skip the file
+- If the file is not changed locally but it remotely, pull the file
 - If the file is changed locally and not remotely, push the file
 - The file is in conflict, skip the file
 
