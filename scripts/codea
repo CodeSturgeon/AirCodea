@@ -56,13 +56,22 @@ if args['push']:
     if filename in cp.files:
         code_hash = cp.upload_file(filename)
         save_hash(filename, code_hash)
+    elif filename == 'all':
+        for fn in cp.files:
+            code_hash = cp.upload_file(fn)
+            save_hash(fn, code_hash)
     else:
         print 'That file is not in the project!'
 
 # Pull
 elif args['pull']:
-    code_hash = cp.download_file(filename)
-    save_hash(filename, code_hash)
+    if filename == 'all':
+        for fn in cp.files:
+            code_hash = cp.download_file(fn)
+            save_hash(fn, code_hash)
+    else:
+        code_hash = cp.download_file(filename)
+        save_hash(filename, code_hash)
 
 elif args['restart']:
     cp.restart()
