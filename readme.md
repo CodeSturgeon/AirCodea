@@ -15,6 +15,7 @@ _NOTE: 'all' will sync all known files_
 Push file to Codea overwriting content
 
 _NOTE: you cannot make new files like this_
+
 _NOTE: 'all' will sync all known files_
 
 ### Sync (Default)
@@ -40,3 +41,8 @@ INI style file.
     project = <Project this folder syncs with>
 
 Note that hashes are saved in this file automatically.
+
+
+## Issues
+
+The air code server is a bit buggy. There are times when Codea will delete files (O_O) when you use air code. For whatever reason AirCodea trips that bug more frequently than using a browser. Keep this in mind when pushing and syncing. I keep things checked in to git at pretty much all times to mitigate the issue.
