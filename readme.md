@@ -9,9 +9,13 @@ Air Codea is a command line sync tool for use with the Air Code feature of Codea
 ### Pull
 Pull file from Codea overwriting content
 
+_NOTE: 'all' will sync all known files_
+
 ### Push
 Push file to Codea overwriting content
-(Note you cannot make new files like this)
+
+_NOTE: you cannot make new files like this_
+_NOTE: 'all' will sync all known files_
 
 ### Sync (Default)
 Try to judge which way the files should go. If in doubt do nothing.
