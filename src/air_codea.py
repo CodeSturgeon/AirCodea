@@ -37,7 +37,8 @@ class CodeaProject(object):
         text = open(filename + '.lua').read()
         self.browser.visit('%s/%s' % (self.base, filename))
         # FIXME check return code
-        js = "editor.setValue('%s')" % repr(text)[1:-1]
+        quoted_text = text.encode('string_escape')
+        js = "editor.setValue('%s')" % quoted_text
         self.browser.execute_script(js)
 
         # Wait to for the ACE editor to catch up
