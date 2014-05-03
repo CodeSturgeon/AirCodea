@@ -1,6 +1,3 @@
-import requests as req
-from lxml import html
-import json
 from hashlib import md5
 import logging
 from splinter import Browser
@@ -11,6 +8,11 @@ from time import sleep
 SLEEP_TIME = 0.5
 
 log = logging.getLogger('base')
+
+
+class CodeaException(Exception):
+    pass
+
 
 class CodeaProject(object):
     def __init__(self, ip, port, project):
@@ -41,16 +43,19 @@ class CodeaProject(object):
         # Wait to for the ACE editor to catch up
         sleep(SLEEP_TIME)
 
+        # Check that AirCode/ACE likes what we gave it
         try:
             js = 'editor.getSession().getAnnotations()[0].text'
             ret = self.browser.evaluate_script(js)
-        except WebDriverException, e:
-            # No errors detected
+        except WebDriverException:
+            # If the JS can't find annotations there are no problems found
             pass
         else:
-            # FIXME this should be logged
-            print filename, ':', ret
-            
+            # An annotation describing a problem is present on the page
+            err = "%s failed to upload due to error: %s" % (filename, ret)
+            log.error(err)
+            raise CodeaException(err)
+
         return md5(text).hexdigest()
 
     def get_file(self, filename):
@@ -70,4 +75,4 @@ class CodeaProject(object):
 
     def restart(self):
         log.info('Restarting')
-        self.browser.find_by_css('.ace_text-input')[0].type(Keys.CONTROL+'r')
+        self.browser.find_by_css('.ace_text-input')[0].type(Keys.CONTROL + 'r')
