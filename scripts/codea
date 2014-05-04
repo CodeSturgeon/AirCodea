@@ -58,8 +58,20 @@ if args['push']:
         save_hash(filename, code_hash)
     elif filename == 'all':
         for fn in cp.files:
-            code_hash = cp.upload_file(fn)
-            save_hash(fn, code_hash)
+            print 'File %s - ' % fn,
+            text = open(fn + '.lua').read()
+            now_hash = md5(text).hexdigest()
+            try:
+                last_hash = cfg.get(fn, 'hash')
+            except NoSectionError:
+                print 'Unknown state'
+            else:
+                if now_hash != last_hash:
+                    print 'Uploading'
+                    code_hash = cp.upload_file(fn)
+                    save_hash(fn, code_hash)
+                else:
+                    print 'Unchanged'
     else:
         print 'That file is not in the project!'
 
