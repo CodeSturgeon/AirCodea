@@ -45,4 +45,6 @@ Note that hashes are saved in this file automatically.
 
 ## Issues
 
-The air code server is a bit buggy. There are times when Codea will delete files (O_O) when you use air code. For whatever reason AirCodea trips that bug more frequently than using a browser. Keep this in mind when pushing and syncing. I keep things checked in to git at pretty much all times to mitigate the issue.
+The code of the project was recently re-written, switching the update mechanism from raw HTTP calls to PhantomJS automation. This was mainly to get around the [tab deletion bug](https://bitbucket.org/TwoLivesLeft/core/issue/267/air-code-deletes-all-tabs-but-main) and frequent Codea crashes the raw calls triggered. However it does give the added ability to detect syntax problems.
+
+Sadly the switch to PhantomJS hasn't helped much with the crash problems.
