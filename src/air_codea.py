@@ -5,7 +5,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import WebDriverException
 from time import sleep
 
-SLEEP_TIME = 0.5
+SYNTAX_SLEEP_TIME = 0.5
+UPLOAD_SLEEP_TIME = 2
 
 log = logging.getLogger('base')
 
@@ -19,6 +20,8 @@ class CodeaProject(object):
         self.base = 'http://%s:%s/projects/%s' % (ip, port, project)
         # FIXME set a low timeout or somehow test the base string first
         self.browser = Browser('phantomjs')
+
+        self.uploaded = False
 
         # Always make sure we are on the right project
         self._check_files()
@@ -34,15 +37,25 @@ class CodeaProject(object):
 
     def upload_file(self, filename):
         log.info('Uploading %s' % filename)
+
+        # Navigate to page if needed
+        page_url = '%s/%s' % (self.base, filename)
+        if self.browser.url != page_url:
+            self.browser.visit(page_url)
+            # FIXME check return code
+
+        if self.uploaded:
+            # Just give Codea a chance to catch up
+            log.debug('Quick snooze to avoid timing problems')
+            sleep(UPLOAD_SLEEP_TIME)
+
         text = open(filename + '.lua').read()
-        self.browser.visit('%s/%s' % (self.base, filename))
-        # FIXME check return code
         quoted_text = text.encode('string_escape')
         js = "editor.setValue('%s')" % quoted_text
         self.browser.execute_script(js)
 
         # Wait to for the ACE editor to catch up
-        sleep(SLEEP_TIME)
+        sleep(SYNTAX_SLEEP_TIME)
 
         # Check that AirCode/ACE likes what we gave it
         try:
@@ -50,6 +63,7 @@ class CodeaProject(object):
             ret = self.browser.evaluate_script(js)
         except WebDriverException:
             # If the JS can't find annotations there are no problems found
+            self.uploaded = True
             pass
         else:
             # An annotation describing a problem is present on the page
@@ -76,4 +90,10 @@ class CodeaProject(object):
 
     def restart(self):
         log.info('Restarting')
+
+        if self.uploaded:
+            # Just give Codea a chance to catch up
+            log.debug('Quick snooze to avoid timing problems')
+            sleep(UPLOAD_SLEEP_TIME)
+
         self.browser.find_by_css('.ace_text-input')[0].type(Keys.CONTROL + 'r')
