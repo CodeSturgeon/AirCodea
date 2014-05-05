@@ -7,4 +7,5 @@ setup(
     scripts=[
         'scripts/codea',
     ]
+    requirements=['requests'].
 )
