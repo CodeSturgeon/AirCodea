@@ -9,6 +9,7 @@ log = logging.getLogger('base')
 
 UPDATE_PAUSE_TIME = 2
 
+
 class CodeaProject(object):
     def __init__(self, ip, port, project):
         self.base = 'http://%s:%s/projects/%s' % (ip, port, project)
@@ -19,7 +20,7 @@ class CodeaProject(object):
     def _check_files(self):
         log.info('Checking files @ %s' % self.base)
         resp = req.get(self.base)
-        if resp.status_code!= 200:
+        if resp.status_code != 200:
             log.debug(resp.content)
         xp = '//ul[@class="tabs"]/a[@href!="/"]/li'
         files = [e.text for e in html.fromstring(resp.content).xpath(xp)]
@@ -37,7 +38,7 @@ class CodeaProject(object):
                 'contents': text
             })
         )
-        if resp.status_code!= 200:
+        if resp.status_code != 200:
             log.debug(resp.content)
         self.uploaded = True
         return md5(text).hexdigest()
@@ -45,7 +46,7 @@ class CodeaProject(object):
     def get_file(self, filename):
         log.info('Getting %s' % filename)
         resp = req.get('%s/%s' % (self.base, filename))
-        if resp.status_code!= 200:
+        if resp.status_code != 200:
             log.debug(resp.content)
         xp = '//div[@id="editor"]'
         text = html.fromstring(resp.content).xpath(xp)[0].text
@@ -64,5 +65,5 @@ class CodeaProject(object):
         if self.uploaded:
             sleep(UPDATE_PAUSE_TIME)
         resp = req.get(self.base + '/__restart')
-        if resp.status_code!= 200:
+        if resp.status_code != 200:
             log.debug(resp.content)
