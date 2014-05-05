@@ -40,6 +40,7 @@ class CodeaProject(object):
         )
         if resp.status_code != 200:
             log.debug(resp.content)
+        # FIXME check the upload actually worked
         self.uploaded = True
         return md5(text).hexdigest()
 
