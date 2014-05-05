@@ -3,15 +3,18 @@ from lxml import html
 import json
 from hashlib import md5
 import logging
+from time import sleep
 
 log = logging.getLogger('base')
 
+UPDATE_PAUSE_TIME = 2
 
 class CodeaProject(object):
     def __init__(self, ip, port, project):
         self.base = 'http://%s:%s/projects/%s' % (ip, port, project)
         # Always make sure we are on the right project
         self._check_files()
+        self.uploaded = False
 
     def _check_files(self):
         log.info('Checking files @ %s' % self.base)
@@ -25,6 +28,8 @@ class CodeaProject(object):
 
     def upload_file(self, filename):
         log.info('Uploading %s' % filename)
+        if self.uploaded:
+            sleep(UPDATE_PAUSE_TIME)
         text = open(filename + '.lua').read()
         resp = req.post(self.base + '/__update',
             data=json.dumps({
@@ -34,6 +39,7 @@ class CodeaProject(object):
         )
         if resp.status_code!= 200:
             log.debug(resp.content)
+        self.uploaded = True
         return md5(text).hexdigest()
 
     def get_file(self, filename):
@@ -55,6 +61,8 @@ class CodeaProject(object):
 
     def restart(self):
         log.info('Restarting')
+        if self.uploaded:
+            sleep(UPDATE_PAUSE_TIME)
         resp = req.get(self.base + '/__restart')
         if resp.status_code!= 200:
             log.debug(resp.content)
