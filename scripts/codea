@@ -7,6 +7,7 @@ Usage:
   codea [-r]
   codea [-r] push <name>
   codea [-r] pull <name>
+  codea watch
   codea restart
   codea files
 
@@ -22,6 +23,8 @@ from glob import glob
 from hashlib import md5
 from air_codea import CodeaProject
 import logging
+from time import sleep
+from os.path import basename
 
 args = docopt(__doc__)
 cfg = ConfigParser()
@@ -91,6 +94,44 @@ elif args['restart']:
 elif args['files']:
     for f in cp.files:
         print f
+
+elif args['watch']:
+    from watchdog.observers import Observer
+    from watchdog.events import PatternMatchingEventHandler
+    class LuaChangeHandler(PatternMatchingEventHandler):
+        patterns=['*.lua']
+
+        def process(self, event):
+            fn = basename(event.src_path)[:-4]
+            print 'File %s -' % fn,
+            text = open(fn + '.lua').read()
+            now_hash = md5(text).hexdigest()
+            try:
+                last_hash = cfg.get(fn, 'hash')
+            except NoSectionError:
+                print 'Unknown state'
+            else:
+                if now_hash != last_hash:
+                    print 'Uploading'
+                    code_hash = cp.upload_file(fn)
+                    save_hash(fn, code_hash)
+                else:
+                    print 'Unchanged'
+
+        def on_created(self, event):
+            self.process(event)
+
+    event_handler = LuaChangeHandler()
+    observer = Observer()
+    observer.schedule(event_handler, '.', recursive=True)
+    observer.start()
+    try:
+        while True:
+            sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        print
+    observer.join()
 
 # Sync
 else:
