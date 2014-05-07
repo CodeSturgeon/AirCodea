@@ -35,12 +35,6 @@ ip = cfg.get('connection', 'ip')
 port = cfg.get('connection', 'port')
 project = cfg.get('connection', 'project')
 
-logging.basicConfig(
-    filename='air_codea.log',
-    level=logging.DEBUG,
-    format='%(asctime)s %(levelname)7s : %(message)s'
-)
-
 cp = CodeaProject(ip, port, project)
 
 filename = args['<name>']
