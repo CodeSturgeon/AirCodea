@@ -22,9 +22,43 @@ from docopt import docopt
 from glob import glob
 from hashlib import md5
 from air_codea import CodeaProject
-import logging
-from time import sleep
 from os.path import basename
+
+# Watcher event loop stuff
+import tty
+import termios
+from sys import stdin
+from time import sleep
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
+
+
+# Watches for Lua file changes
+class LuaChangeHandler(PatternMatchingEventHandler):
+    patterns = ['*.lua']
+
+    def process(self, event):
+        fn = basename(event.src_path)[:-4]
+        print 'File %s -' % fn,
+        text = open(fn + '.lua').read()
+        now_hash = md5(text).hexdigest()
+        remote_hash, remote_text = cp.get_file(fn)
+        try:
+            last_hash = cfg.get(fn, 'hash')
+        except NoSectionError:
+            print 'Unknown state\r'
+        else:
+            if remote_hash != last_hash:
+                print 'Codea version updated\r'
+            elif now_hash != last_hash:
+                print 'Uploading\r'
+                code_hash = cp.upload_file(fn)
+                save_hash(fn, code_hash)
+            else:
+                print 'Unchanged\r'
+
+    def on_created(self, event):
+        self.process(event)
 
 args = docopt(__doc__)
 cfg = ConfigParser()
@@ -89,47 +123,6 @@ elif args['files']:
     for f in cp.files:
         print f
 
-elif args['watch']:
-    from watchdog.observers import Observer
-    from watchdog.events import PatternMatchingEventHandler
-    class LuaChangeHandler(PatternMatchingEventHandler):
-        patterns=['*.lua']
-
-        def process(self, event):
-            fn = basename(event.src_path)[:-4]
-            print 'File %s -' % fn,
-            text = open(fn + '.lua').read()
-            now_hash = md5(text).hexdigest()
-            remote_hash, remote_text = cp.get_file(fn)
-            try:
-                last_hash = cfg.get(fn, 'hash')
-            except NoSectionError:
-                print 'Unknown state'
-            else:
-                if remote_hash != last_hash:
-                    print 'Codea version updated'
-                elif now_hash != last_hash:
-                    print 'Uploading'
-                    code_hash = cp.upload_file(fn)
-                    save_hash(fn, code_hash)
-                else:
-                    print 'Unchanged'
-
-        def on_created(self, event):
-            self.process(event)
-
-    event_handler = LuaChangeHandler()
-    observer = Observer()
-    observer.schedule(event_handler, '.', recursive=True)
-    observer.start()
-    try:
-        while True:
-            sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-        print
-    observer.join()
-
 # Sync
 else:
     local_files = [f[:-4] for f in glob('*.lua')]
@@ -173,6 +166,31 @@ else:
             continue
 
         print 'Local and remote changed'
+
+if args['watch']:
+    event_handler = LuaChangeHandler()
+    observer = Observer()
+    observer.schedule(event_handler, '.', recursive=True)
+    observer.start()
+    stdin_settings = termios.tcgetattr(stdin)
+    try:
+        while True:
+            try:
+                tty.setraw(stdin)
+                c = stdin.read(1)
+            finally:
+                termios.tcsetattr(stdin, termios.TCSADRAIN, stdin_settings)
+            if c == 'r':
+                print 'Restarting'
+                cp.restart()
+            elif c in ('\x03', 'q'):
+                raise KeyboardInterrupt
+            else:
+                sleep(0.5)
+    except KeyboardInterrupt:
+        print 'Quitting...'
+        observer.stop()
+    observer.join()
 
 if args['--restart']:
     print 'Restarting'
