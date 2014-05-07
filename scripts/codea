@@ -100,12 +100,15 @@ elif args['watch']:
             print 'File %s -' % fn,
             text = open(fn + '.lua').read()
             now_hash = md5(text).hexdigest()
+            remote_hash, remote_text = cp.get_file(fn)
             try:
                 last_hash = cfg.get(fn, 'hash')
             except NoSectionError:
                 print 'Unknown state'
             else:
-                if now_hash != last_hash:
+                if remote_hash != last_hash:
+                    print 'Codea version updated'
+                elif now_hash != last_hash:
                     print 'Uploading'
                     code_hash = cp.upload_file(fn)
                     save_hash(fn, code_hash)
