@@ -51,9 +51,12 @@ class LuaChangeHandler(PatternMatchingEventHandler):
             if remote_hash != last_hash:
                 print 'Codea version updated\r'
             elif now_hash != last_hash:
-                print 'Uploading\r'
-                code_hash = cp.upload_file(fn)
-                save_hash(fn, code_hash)
+                upload_hash = cp.upload_file(fn)
+                if upload_hash == remote_hash:
+                    print 'Upload failed\r'
+                else:
+                    print 'Uploaded\r'
+                    save_hash(fn, upload_hash)
             else:
                 print 'Unchanged\r'
 

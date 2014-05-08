@@ -3,11 +3,11 @@ from lxml import html
 import json
 from hashlib import md5
 import logging
-from time import sleep, time
+from time import sleep
 
 log = logging.getLogger('base')
 
-UPDATE_PAUSE_TIME = 2
+UPDATE_PAUSE_TIME = 0.1  # NOTE: might have to scale this up for big files
 TIMEOUT = 0.5
 
 
@@ -16,7 +16,6 @@ class CodeaProject(object):
         self.base = 'http://%s:%s/projects/%s' % (ip, port, project)
         # Always make sure we are on the right project
         self._check_files()
-        self.backoff = time()
 
     def _check_files(self):
         log.info('Checking files @ %s' % self.base)
@@ -30,8 +29,6 @@ class CodeaProject(object):
 
     def upload_file(self, filename):
         log.info('Uploading %s' % filename)
-        if self.backoff > time():
-            sleep(self.backoff - time())
         text = open(filename + '.lua').read()
         resp = req.post(self.base + '/__update', timeout=TIMEOUT,
             data=json.dumps({
@@ -41,8 +38,16 @@ class CodeaProject(object):
         )
         if resp.status_code != 200:
             log.debug(resp.content)
-        # FIXME check the upload actually worked
-        self.backoff = time() + UPDATE_PAUSE_TIME
+
+        # Give AirCode some breathing room to prevent crashes
+        sleep(UPDATE_PAUSE_TIME)
+
+        # Check to see if the upload worked
+        # AirCode will reject text with syntax errors
+        check_text = self.get_file(filename)[1]
+        # Always be sure to track what is in Codea
+        text = check_text
+
         return md5(text).hexdigest()
 
     def get_file(self, filename):
@@ -64,8 +69,6 @@ class CodeaProject(object):
 
     def restart(self):
         log.info('Restarting')
-        if self.backoff > time():
-            sleep(self.backoff - time())
         resp = req.get(self.base + '/__restart')
         if resp.status_code != 200:
             log.debug(resp.content)
