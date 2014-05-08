@@ -38,6 +38,7 @@ class LuaChangeHandler(PatternMatchingEventHandler):
     patterns = ['*.lua']
 
     def process(self, event):
+        # NOTE: use of \r as the raw TTY in the watch is in effect
         fn = basename(event.src_path)[:-4]
         print 'File %s -' % fn,
         text = open(fn + '.lua').read()
@@ -170,23 +171,30 @@ else:
 
         print 'Local and remote changed'
 
+# Only run the watch after a sync
 if args['watch']:
+    # Setup the watcher
     event_handler = LuaChangeHandler()
     observer = Observer()
     observer.schedule(event_handler, '.', recursive=True)
     observer.start()
+
+    # Stash the current TTY defaults
     stdin_settings = termios.tcgetattr(stdin)
     try:
         while True:
             try:
+                # Try reading a char
                 tty.setraw(stdin)
                 c = stdin.read(1)
             finally:
+                # Always make sure to reset the TTYs to defaults
                 termios.tcsetattr(stdin, termios.TCSADRAIN, stdin_settings)
             if c == 'r':
                 print 'Restarting'
                 cp.restart()
             elif c in ('\x03', 'q'):
+                # Catch attempts to quit
                 raise KeyboardInterrupt
             else:
                 sleep(0.5)
