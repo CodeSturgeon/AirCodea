@@ -8,6 +8,7 @@ from time import sleep, time
 log = logging.getLogger('base')
 
 UPDATE_PAUSE_TIME = 2
+TIMEOUT = 0.5
 
 
 class CodeaProject(object):
@@ -19,7 +20,7 @@ class CodeaProject(object):
 
     def _check_files(self):
         log.info('Checking files @ %s' % self.base)
-        resp = req.get(self.base)
+        resp = req.get(self.base, timeout=TIMEOUT)
         if resp.status_code != 200:
             log.debug(resp.content)
         xp = '//ul[@class="tabs"]/a[@href!="/"]/li'
@@ -32,7 +33,7 @@ class CodeaProject(object):
         if self.backoff > time():
             sleep(self.backoff - time())
         text = open(filename + '.lua').read()
-        resp = req.post(self.base + '/__update',
+        resp = req.post(self.base + '/__update', timeout=TIMEOUT,
             data=json.dumps({
                 'file': filename,
                 'contents': text
@@ -46,7 +47,7 @@ class CodeaProject(object):
 
     def get_file(self, filename):
         log.info('Getting %s' % filename)
-        resp = req.get('%s/%s' % (self.base, filename))
+        resp = req.get('%s/%s' % (self.base, filename), timeout=TIMEOUT)
         if resp.status_code != 200:
             log.debug(resp.content)
         xp = '//div[@id="editor"]'
