@@ -2,3 +2,5 @@
 air_codea.log
 *.pyc
 *.lua
+.venv/
+*.egg-info
