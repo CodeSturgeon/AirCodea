@@ -6,6 +6,6 @@ setup(
     package_dir={'': 'src'},
     scripts=[
         'scripts/codea',
-    ]
+    ],
     requirements=['requests'],
 )
